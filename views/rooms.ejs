@@ -1,0 +1,41 @@
+<html lang="en">
+<%- include('./partials/head') %>
+<body>
+    <style>
+        /* Styling for the room links */
+        .room-link {
+            transition: background-color 0.2s, transform 0.2s; /* Smooth transition for hover effects */
+            display: block;
+            padding: 10px 15px;
+        }
+
+        .room-link:hover {
+            background-color: #f8f9fa; /* Light gray background on hover */
+            text-decoration: none; 
+            transform: scale(1.02); /* Slightly enlarge the item on hover */
+        }
+    </style>
+    <%- include('./partials/nav') %>
+
+    <body style="background-color: #f4f6f8;">
+
+        <div class="container mt-5">
+            <h2 class="mb-4">Available Rooms</h2>
+            <ul class="list-group">
+                <% rooms.forEach(room => { %>
+                    <li class="list-group-item">
+                        <!-- Applying the style to the anchor elements -->
+                        <a href="/chat?roomName=<%= room.name %>" class="room-link text-dark text-decoration-none">
+                            <%= room.name %>
+                        </a>
+                    </li>
+                <% }); %>
+            </ul>
+        </div>
+    
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
+

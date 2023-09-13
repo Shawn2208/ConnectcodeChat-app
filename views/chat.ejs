@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('./partials/head') %>
+<title><%= roomName %> | ChatApp</title>
+<body>
+    <style>
+        /* Styling for chat messages */
+        .chat-message {
+            border-bottom: 1px solid #f1f1f1; /* Light gray separator between messages */
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+        }
+
+        .chat-timestamp {
+            font-size: 0.75rem;
+            color: #888; /* Gray color for timestamp to make it subtle */
+            margin-left: 10px; /* Space between message and timestamp */
+        }
+    </style>
+
+    <%- include('./partials/nav') %>
+    <div class="container mt-4">
+        <h2 class="text-center my-4">Welcome to the <%= roomName ? roomName : "Chat" %> Room</h2>
+
+        <!-- Messages will be displayed here -->
+        <div id="chatArea" class="bg-light border rounded p-3 mb-4" style="height: 400px; overflow-y: scroll;"
+             data-username="<%- user ? user.username : '' %>"
+             data-room="<%- roomName %>">
+            <% messages.forEach(function(message) { %>
+                <div class="chat-message">
+                    <strong><%= message.sender %>:</strong>
+                    <% if (message.message.startsWith('```') && message.message.endsWith('```')) { %>
+                        <pre><code><%= message.message.slice(3, -3) %></code></pre>
+                    <% } else { %>
+                        <%= message.message %>
+                    <% } %>
+                    <span class="chat-timestamp"><%= new Date(message.timestamp).toLocaleString() %></span>
+                </div>
+            <% }) %>
+        </div>
+
+        <form id="chatForm">
+            <div class="input-group">
+                <input type="text" id="message" class="form-control" placeholder="Type a message">
+                <div class="input-group-append">
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Include Socket.IO library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const chatArea = document.getElementById('chatArea');
+        const chatForm = document.getElementById('chatForm');
+        const messageInput = document.getElementById('message');
+        const username = "<%= user ? user.username : '' %>";
+        const roomId = "<%= roomId %>";
+
+        // Dynamic socket connection based on the current location
+        const socket = io(window.location.origin);
+
+        // Join the room
+        socket.emit('joinRoom', { roomId: roomId });
+
+        // Function to append message to chat area
+        function appendMessage(sender, text) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message');
+
+            // Assuming code messages are wrapped with backticks (like in markdown)
+            if (text.startsWith('```') && text.endsWith('```')) {
+                text = text.slice(3, -3); // remove backticks
+                const codeWrapper = document.createElement('pre');
+                const codeElem = document.createElement('code');
+                codeElem.textContent = text;
+                codeWrapper.appendChild(codeElem);
+                messageElement.appendChild(codeWrapper);
+                hljs.highlightBlock(codeElem); // Apply highlighter
+            } else {
+                messageElement.textContent = `${sender}: ${text}`;
+            }
+
+            const timestampSpan = document.createElement('span');
+            timestampSpan.classList.add('chat-timestamp');
+            timestampSpan.textContent = new Date().toLocaleString();
+            messageElement.appendChild(timestampSpan);
+
+            chatArea.appendChild(messageElement);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // Listen for messages from the server and display them
+        socket.on('message', (data) => {
+            console.log('Received message:', data);
+            appendMessage(data.sender, data.message);
+        });
+
+        // Handle form submission
+        chatForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const messageText = messageInput.value.trim();
+            if (messageText !== '') {
+                // Emit the message to the server
+                socket.emit('message', {
+                    type: 'message',
+                    message: messageText,
+                    sender: username,
+                    roomId: roomId
+                });
+
+                messageInput.value = '';
+                messageInput.focus();
+            }
+        });
+    </script>
+
+    <!-- Syntax highlighting library (adjust the path accordingly) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+
+    <!-- Initialize syntax highlighting -->
+    <script>hljs.highlightAll();</script>
+
+    <!-- Include Bootstrap JS (adjust the path accordingly) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
