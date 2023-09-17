@@ -80,14 +80,14 @@ app.use((req, res, next) => {
 // Route handling
 app.get('/', (req, res) => {
     res.render('main', {
-        title: 'DevConnect',
+        title: 'connectCodeChat',
         user: req.user, // Pass the user information to the template
     });
 });
 
 app.get('/login', (req, res) => {
     res.render('login', {
-        title: 'DevConnect',
+        title: 'connectCodeChat',
         user: req.user, // Pass the user information to the template
     });
     
