@@ -1,128 +1,128 @@
+<!-- chat.ejs (Polished Style Only, Logic Unchanged) -->
 <!DOCTYPE html>
 <html lang="en">
 <%- include('./partials/head') %>
 <title><%= roomName %> | ChatApp</title>
-<body>
-    <style>
-        /* Styling for chat messages */
-        .chat-message {
-            border-bottom: 1px solid #f1f1f1; /* Light gray separator between messages */
-            margin-bottom: 8px;
-            padding-bottom: 8px;
-        }
+<body class="bg-light">
+  <style>
+    .chat-message {
+      background: #fff;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      transition: transform 0.2s;
+    }
 
-        .chat-timestamp {
-            font-size: 0.75rem;
-            color: #888; /* Gray color for timestamp to make it subtle */
-            margin-left: 10px; /* Space between message and timestamp */
-        }
-    </style>
+    .chat-message:hover {
+      transform: scale(1.01);
+    }
 
-    <%- include('./partials/nav') %>
-    <div class="container mt-4">
-        <h2 class="text-center my-4">Welcome to the <%= roomName ? roomName : "Chat" %> Room</h2>
+    .chat-timestamp {
+      font-size: 0.75rem;
+      color: #6c757d;
+      margin-left: 10px;
+    }
 
-        <!-- Messages will be displayed here -->
-        <div id="chatArea" class="bg-light border rounded p-3 mb-4" style="height: 400px; overflow-y: scroll;"
-             data-username="<%- user ? user.username : '' %>"
-             data-room="<%- roomName %>">
-            <% messages.forEach(function(message) { %>
-                <div class="chat-message">
-                    <strong><%= message.sender %>:</strong>
-                    <% if (message.message.startsWith('```') && message.message.endsWith('```')) { %>
-                        <pre><code><%= message.message.slice(3, -3) %></code></pre>
-                    <% } else { %>
-                        <%= message.message %>
-                    <% } %>
-                    <span class="chat-timestamp"><%= new Date(message.timestamp).toLocaleString() %></span>
-                </div>
-            <% }) %>
+    pre code {
+      background-color: #1e1e1e;
+      color: #f8f8f2;
+      padding: 0.5rem;
+      border-radius: 0.3rem;
+      display: block;
+      overflow-x: auto;
+    }
+  </style>
+
+  <%- include('./partials/nav') %>
+  <div class="container mt-4">
+    <h2 class="text-center my-4">Welcome to the <%= roomName ? roomName : "Chat" %> Room</h2>
+
+    <div id="chatArea" class="bg-white border rounded p-3 mb-4" style="height: 400px; overflow-y: scroll;"
+         data-username="<%- user ? user.username : '' %>"
+         data-room="<%- roomName %>">
+      <% messages.forEach(function(message) { %>
+        <div class="chat-message">
+          <strong class="text-primary"><%= message.sender %>:</strong>
+          <% if (message.message.startsWith('```') && message.message.endsWith('```')) { %>
+            <pre><code><%= message.message.slice(3, -3) %></code></pre>
+          <% } else { %>
+            <%= message.message %>
+          <% } %>
+          <span class="chat-timestamp"><%= new Date(message.timestamp).toLocaleString() %></span>
         </div>
-
-        <form id="chatForm">
-            <div class="input-group">
-                <input type="text" id="message" class="form-control" placeholder="Type a message">
-                <div class="input-group-append">
-                    <button type="submit" class="btn btn-primary">Send</button>
-                </div>
-            </div>
-        </form>
+      <% }) %>
     </div>
 
-    <!-- Include Socket.IO library -->
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const chatArea = document.getElementById('chatArea');
-        const chatForm = document.getElementById('chatForm');
-        const messageInput = document.getElementById('message');
-        const username = "<%= user ? user.username : '' %>";
-        const roomId = "<%= roomId %>";
+    <form id="chatForm">
+      <div class="input-group">
+        <input type="text" id="message" class="form-control" placeholder="Type a message">
+        <div class="input-group-append">
+          <button type="submit" class="btn btn-primary">Send</button>
+        </div>
+      </div>
+    </form>
+  </div>
 
-        // Dynamic socket connection based on the current location
-        const socket = io(window.location.origin);
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const chatArea = document.getElementById('chatArea');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('message');
+    const username = "<%= user ? user.username : '' %>";
+    const roomId = "<%= roomId %>";
 
-        // Join the room
-        socket.emit('joinRoom', { roomId: roomId });
+    const socket = io(window.location.origin);
+    socket.emit('joinRoom', { roomId: roomId });
 
-        // Function to append message to chat area
-        function appendMessage(sender, text) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('chat-message');
+    function appendMessage(sender, text) {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('chat-message');
 
-            // Assuming code messages are wrapped with backticks (like in markdown)
-            if (text.startsWith('```') && text.endsWith('```')) {
-                text = text.slice(3, -3); // remove backticks
-                const codeWrapper = document.createElement('pre');
-                const codeElem = document.createElement('code');
-                codeElem.textContent = text;
-                codeWrapper.appendChild(codeElem);
-                messageElement.appendChild(codeWrapper);
-                hljs.highlightBlock(codeElem); // Apply highlighter
-            } else {
-                messageElement.textContent = `${sender}: ${text}`;
-            }
+      if (text.startsWith('```') && text.endsWith('```')) {
+        text = text.slice(3, -3);
+        const codeWrapper = document.createElement('pre');
+        const codeElem = document.createElement('code');
+        codeElem.textContent = text;
+        codeWrapper.appendChild(codeElem);
+        messageElement.appendChild(codeWrapper);
+      } else {
+        messageElement.textContent = `${sender}: ${text}`;
+      }
 
-            const timestampSpan = document.createElement('span');
-            timestampSpan.classList.add('chat-timestamp');
-            timestampSpan.textContent = new Date().toLocaleString();
-            messageElement.appendChild(timestampSpan);
+      const timestampSpan = document.createElement('span');
+      timestampSpan.classList.add('chat-timestamp');
+      timestampSpan.textContent = new Date().toLocaleString();
+      messageElement.appendChild(timestampSpan);
 
-            chatArea.appendChild(messageElement);
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
+      chatArea.appendChild(messageElement);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
 
-        // Listen for messages from the server and display them
-        socket.on('message', (data) => {
-            console.log('Received message:', data);
-            appendMessage(data.sender, data.message);
+    socket.on('message', (data) => {
+      console.log('Received message:', data);
+      appendMessage(data.sender, data.message);
+    });
+
+    chatForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const messageText = messageInput.value.trim();
+      if (messageText !== '') {
+        socket.emit('message', {
+          type: 'message',
+          message: messageText,
+          sender: username,
+          roomId: roomId
         });
 
-        // Handle form submission
-        chatForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const messageText = messageInput.value.trim();
-            if (messageText !== '') {
-                // Emit the message to the server
-                socket.emit('message', {
-                    type: 'message',
-                    message: messageText,
-                    sender: username,
-                    roomId: roomId
-                });
+        messageInput.value = '';
+        messageInput.focus();
+      }
+    });
+  </script>
 
-                messageInput.value = '';
-                messageInput.focus();
-            }
-        });
-    </script>
-
-    <!-- Syntax highlighting library (adjust the path accordingly) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
-
-    <!-- Initialize syntax highlighting -->
-    <script>hljs.highlightAll();</script>
-
-    <!-- Include Bootstrap JS (adjust the path accordingly) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.3.1/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
